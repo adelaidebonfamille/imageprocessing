@@ -1,0 +1,170 @@
+import cv2
+import numpy as np
+from IPython.display import display, Image
+from google.colab import files
+import os
+
+class ImageProcessor:
+    def __init__(self):
+        self.original_image = None
+        self.processed_image = None
+    
+    def load_image(self, image_path):
+        self.original_image = cv2.imread(image_path)
+        self.processed_image = np.copy(self.original_image)
+    
+    def display_image(self, image, format='.jpg'):
+        _, encoded_image = cv2.imencode(format, image)
+        display(Image(data=encoded_image))
+
+    def get_file_size(self, image):
+        _, encoded_image = cv2.imencode('.jpg', image)
+        size_bytes = len(encoded_image)
+        return size_bytes
+
+    def change_color(self, color_option):
+        if color_option == 1:
+            self.display_image(self.original_image)
+        elif color_option == 2:
+            self.processed_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2RGB)
+            self.display_image(self.processed_image)
+        elif color_option == 3:
+            self.processed_image = cv2.cvtColor(self.original_image, cv2.COLOR_BGR2GRAY)
+            self.display_image(self.processed_image)
+        else:
+            print('Opsi tidak valid')
+
+    def resize_image(self, new_width, new_height):
+        self.processed_image = cv2.resize(self.original_image, (new_width, new_height))
+        self.display_image(self.processed_image)
+
+    def erode_image(self, kernel_size):
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
+        self.processed_image = cv2.erode(self.original_image, kernel, iterations=1)
+        self.display_image(self.processed_image)
+
+    def blur_image(self, blur_size):
+        self.processed_image = cv2.blur(self.original_image, (blur_size, blur_size))
+        self.display_image(self.processed_image)
+
+    def denoise_image(self):
+        self.processed_image = cv2.fastNlMeansDenoisingColored(self.original_image, None, 10, 10, 7, 21)
+        self.display_image(self.processed_image)
+
+    def change_resolution(self, new_resolution):
+        self.processed_image = cv2.resize(self.original_image, (new_resolution, new_resolution))
+        self.display_image(self.processed_image)
+
+    def process_option(self, menu_option):
+        try:
+            if menu_option == 1:
+                original_size = self.get_file_size(self.original_image)
+                print(f"Ukuran File Gambar Sebelum diproses: {original_size} bytes")
+                return
+            if 2 <= menu_option <= 7:
+                option_function = getattr(self, f"process_option_{menu_option}")
+                option_function()
+                processed_size = self.get_file_size(self.processed_image)
+                print(f"Ukuran File Gambar Setelah diproses: {processed_size} bytes")
+            elif menu_option == 8:
+                self.change_image()
+            else:
+                print("Opsi tidak valid.")
+        except Exception as e:
+            print(f"Terjadi kesalahan: {e}")
+
+    def process_option_2(self):
+        color_option = int(input("Pilih opsi warna:\n1. Original\n2. RGB TO BGR\n3. Grayscale\nMasukkan nomor opsi: "))
+        self.change_color(color_option)
+
+    def process_option_3(self):
+        new_height = int(input("Masukkan tinggi baru: "))
+        new_width = int(input("Masukkan lebar baru: "))
+        self.resize_image(new_width, new_height)
+
+    def process_option_4(self):
+        kernel_size = int(input("Masukkan ukuran kernel untuk erosi: "))
+        self.erode_image(kernel_size)
+
+    def process_option_5(self):
+        blur_size = int(input("Masukkan ukuran kernel untuk blurring: "))
+        self.blur_image(blur_size)
+
+    def process_option_6(self):
+        self.denoise_image()
+
+    def process_option_7(self):
+        new_resolution = int(input("Masukkan resolusi baru: "))
+        self.change_resolution(new_resolution)
+
+    def process_option_8(self):
+        user_input = input("Apakah Anda ingin mengganti gambar? (y/n): ").lower()
+        if user_input == 'y':
+            uploaded = files.upload()
+            if uploaded:
+                image_filename = list(uploaded.keys())[0]
+                image_path = "/content/" + image_filename
+                try:
+                    self.load_image(image_path)
+                    print("Gambar berhasil diubah.")
+                    self.display_image(self.original_image)
+                except Exception as e:
+                    print(f"Terjadi kesalahan: {e}")
+            else:
+                print("Tidak ada gambar yang diunggah.")
+        elif user_input == 'n':
+            print("Gambar tetap tidak berubah.")
+        else:
+            print("Input tidak valid.")
+
+    def change_image(self):
+        user_input = input("Apakah Anda ingin mengganti gambar? (y/n): ").lower()
+        if user_input == 'y':
+            uploaded = files.upload()
+            if uploaded:
+                image_filename = list(uploaded.keys())[0]
+                image_path = "/content/" + image_filename
+                try:
+                    self.load_image(image_path)
+                    print("Gambar berhasil diubah.")
+                    self.display_image(self.original_image)
+                except Exception as e:
+                    print(f"Terjadi kesalahan: {e}")
+            else:
+                print("Tidak ada gambar yang diunggah.")
+        elif user_input == 'n':
+            print("Gambar tetap tidak berubah.")
+        else:
+            print("Input tidak valid.")
+
+image_uploaded = False
+image_processor = ImageProcessor()
+
+while True:
+    if not image_uploaded:
+        uploaded = files.upload()
+        if not uploaded:
+            user_input = input("Tidak ada gambar yang diunggah. Apakah ingin mengunggah gambar lagi? (y/n): ").lower()
+            if user_input == 'y':
+                continue
+            elif user_input == 'n':
+                print("Terima kasih, keluar dari program.")
+                break
+            else:
+                print("Input tidak valid, keluar dari program.")
+                break
+        image_filename = list(uploaded.keys())[0]
+        image_path = "/content/" + image_filename
+        try:
+            image_processor.load_image(image_path)
+            image_uploaded = True
+            image_processor.display_image(image_processor.original_image)
+            print('Ukuran gambar: ', image_processor.get_file_size(image_processor.original_image))
+        except Exception as e:
+            print(f"Terjadi kesalahan: {e}")
+
+    menu_option = int(input("Pilih opsi:\n1. Lihat storage size image\n2. Ubah warna image\n3. Resizing image\n4. Erode image\n5. Image blurring\n6. Denoise image\n7. Pilihan resolusi\n8. Ganti Gambar\n9. Keluar\nMasukkan nomor opsi: "))
+    if menu_option == 9:
+        print("Terima Kasih, Anda keluar dari program")
+        break
+    image_processor.process_option(menu_option)
