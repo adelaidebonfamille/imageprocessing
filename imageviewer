@@ -1,0 +1,88 @@
+import cv2
+import tkinter as tk
+from tkinter import filedialog
+from tkinter import messagebox
+from PIL import Image, ImageTk
+
+class ImageViewer:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Image Viewer")
+        self.master.configure(bg="#FB6F92")
+        self.image_path = ""
+        self.display_mode = tk.StringVar(value="original")
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.label = tk.Label(self.master, text="Image Viewer", font=("Helvetica", 30, "bold"), fg="#FFFFFF", bg="#FB6F92")
+        self.label.pack(pady=50)
+
+        self.load_button = tk.Button(self.master, text="Load Image", font=("Helvetica", 10, "bold"), command=self.load_image, bg="#FF69B4", width=20, fg="white")
+        self.load_button.pack(pady=10)
+
+        self.display_options = tk.OptionMenu(self.master, self.display_mode, "color", "grayscale", "original")
+        self.display_options.pack(pady=10)
+        self.display_options.config(width=22, highlightthickness=0, bd=0, highlightbackground="#000000")
+
+        self.display_label = tk.Label(self.master, bg="#FFFFFF")
+        self.display_label.pack(pady=10)
+
+        self.show_button = tk.Button(self.master, text="Show Image", command=self.show_image, bg="#FF1493", fg="#FFFFFF", width=20, font=("Helvetica", 10, "bold"))
+        self.show_button.pack(pady=10)
+
+    def load_image(self):
+        self.image_path = filedialog.askopenfilename(title="Pilih Gambar", filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
+        if self.image_path:
+            self.update_display()
+
+    def update_display(self):
+        if self.image_path:
+            img = Image.open(self.image_path)
+            max_width, max_height = 400, 300
+
+            width, height = img.size
+            if width > max_width or height > max_height:
+                aspect_ratio = width / height
+                new_width = min(max_width, int(max_height * aspect_ratio))
+                new_height = min(max_height, int(max_width / aspect_ratio))
+                img = img.resize((new_width, new_height), Image.LANCZOS)
+
+            img = ImageTk.PhotoImage(img)
+            self.display_label.config(image=img)
+            self.display_label.image = img
+
+    def show_image(self):
+        if not self.image_path:
+            self.display_error_message("Anda belum memilih gambar.")
+            return
+
+        img = cv2.imread(self.image_path)
+
+        if img is not None and img.shape[0] >= 100 and img.shape[1] >= 100:
+            display_mode = self.display_mode.get()
+
+            if display_mode == 'color':
+                self.show_image_cv(img)
+            elif display_mode == 'grayscale':
+                img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                self.show_image_cv(img_gray)
+            elif display_mode == 'original':
+                self.show_image_cv(cv2.imread(self.image_path))
+            else:
+                self.display_error_message("Pilihan tampilan tidak valid.")
+        else:
+            self.display_error_message("Gagal membaca gambar atau ukuran gambar kurang dari 100x100 px.")
+
+    def show_image_cv(self, img_cv):
+        cv2.imshow('image', img_cv)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    def display_error_message(self, message):
+        messagebox.showerror("Error", message)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ImageViewer(root)
+    root.geometry("900x700")
+    root.mainloop()
