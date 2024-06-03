@@ -116,14 +116,6 @@ This is the main Python file containing the code for the image processor applica
   - `process_option(self, menu_option)`: Processes the selected menu option and calls the appropriate function.
   - `change_image(self)`: Allows the user to change the image.
 
-## Contributing
-
-Contributions are welcome! If you have any suggestions or improvements, please open an issue or submit a pull request.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 ---
 
 Enjoy using the image processor application! If you encounter any issues, feel free to open an issue in this repository.
